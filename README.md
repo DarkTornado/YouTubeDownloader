@@ -7,4 +7,4 @@
 * Developer is NOT responsible for any problems by using this program and source.
 
 ## License
-* [GPL 3.0](https://github.com/DarkTornado/AndroidTerminal/blob/main/LICENSE).
+* [GPL 3.0](https://github.com/DarkTornado/YouTubeDownloader/blob/main/LICENSE).
