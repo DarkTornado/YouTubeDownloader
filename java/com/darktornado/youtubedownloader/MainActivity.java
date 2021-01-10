@@ -62,28 +62,46 @@ public class MainActivity extends Activity {
             final EditText txt2 = new EditText(this);
             txt2.setHint("Input Vidoe's url...");
             layout.addView(txt2);
-            Button down = new Button(this);
-            down.setText("Download");
-            down.setOnClickListener(new View.OnClickListener() {
+            Button video = new Button(this);
+            video.setText("Download Video");
+            video.setTransformationMethod(null);
+            video.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     String input = txt2.getText().toString();
                     if (input.equals("")) {
                         toast("Please input video's url.");
                     } else {
-                        String url;
-                        if (input.startsWith("https://www.youtube.com/watch?v=")) {
-                            input = input.split("&")[0];
-                            url = input.substring(input.lastIndexOf("=") + 1);
-                        } else {
-                            url = input.substring(input.lastIndexOf("/") + 1);
-                        }
                         final AlertDialog dialog = showProgress();
-                        download(url, dialog);
+                        download(parseVideoId(input), dialog);
                     }
                 }
             });
-            layout.addView(down);
+            layout.addView(video);
+            Button image = new Button(this);
+            image.setText("Download Thumbnail");
+            image.setTransformationMethod(null);
+            image.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    String input = txt2.getText().toString();
+                    if (input.equals("")) {
+                        toast("Please input video's url.");
+                    } else {
+                        final String videoId = parseVideoId(input);
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
+                                String name = videoId + "_thumbnail.jpg";
+                                boolean downloaded = copyFromWeb("https://img.youtube.com/vi/" + videoId + "/maxresdefault.jpg", path + name);
+                                if (downloaded) toast("Video's thumbnail is downloaded.\nName: " + name + ".mp4\nPath: " + path);
+                            }
+                        }).start();
+                    }
+                }
+            });
+            layout.addView(image);
 
             TextView txt = new TextView(this);
             txt.setText("\nThis App is NOT related with Google and YouTube.\nDeveloper and This App are NOT responsible for any problems by using this app.");
@@ -92,7 +110,7 @@ public class MainActivity extends Activity {
             layout.addView(txt);
 
             TextView maker = new TextView(this);
-            maker.setText("\n© 2020 Dark Tornado, All rights reserved.\n");
+            maker.setText("\n© 2020-2021 Dark Tornado, All rights reserved.\n");
             maker.setTextSize(13);
             maker.setTextColor(Color.BLACK);
             maker.setGravity(Gravity.CENTER);
@@ -105,6 +123,14 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             toast(e.toString());
         }
+    }
+
+    private String parseVideoId(String url) {
+        if (url.startsWith("https://www.youtube.com/watch?v=")) {
+            url = url.split("&")[0];
+            return url.substring(url.lastIndexOf("=") + 1);
+        }
+        return url.substring(url.lastIndexOf("/") + 1);
     }
 
     private void download(final String videoId, final AlertDialog dialog) {
@@ -136,12 +162,11 @@ public class MainActivity extends Activity {
                     String url = data.getJSONObject("streamingData").getJSONArray("formats").getJSONObject(0).getString("url");
                     final String title = data.getJSONObject("videoDetails").getString("title");
                     final String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
-                    copyFromWeb(url, path + title + ".mp4");
+                    if (copyFromWeb(url, path + title + ".mp4")) toast("Video is downloaded.\nName: " + title + ".mp4\nPath: " + path);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             dialog.dismiss();
-                            toast("Video is downloaded.\nName: " + title + ".mp4\nPath: " + path);
                         }
                     });
                 } catch (Exception e) {
@@ -151,7 +176,7 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    private void copyFromWeb(String url, String path) {
+    private boolean copyFromWeb(String url, String path) {
         try {
             URLConnection con = new URL(url).openConnection();
             if (con != null) {
@@ -169,8 +194,11 @@ public class MainActivity extends Activity {
                 bos.close();
                 fos.close();
             }
+            return true;
         } catch (Exception e) {
-            toast("Failed to download video.\n" + e.toString());
+            toast("Download Failed.");
+//            toast("Download Failed.\n" + e.toString());
+            return false;
         }
     }
 
@@ -193,6 +221,7 @@ public class MainActivity extends Activity {
         dialog.getWindow().setLayout(dip2px(170), -2);
         return dialog;
     }
+
 
     private void permissionCheck() {
         if (Build.VERSION.SDK_INT < 23) return;
