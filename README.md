@@ -15,10 +15,13 @@
 ## Download & Update Log / 다운로드 & 업데이트 내역
 * [Version 1.0](https://raw.githubusercontent.com/DarkTornado/YouTubeDownloader/main/YouTubeDownloader%201.0.apk)
   * It only supports downloading video.
+  * 동영상 추출만 지원
   
 * [Version 2.0](https://raw.githubusercontent.com/DarkTornado/YouTubeDownloader/main/YouTubeDownloader%202.0.apk)
   * Downloading YouTube video's thumbnail is add.
   * Multi Window support.
+  * 동영상 미리보기 이미지 다운로드 지원.
+  * 멀티 윈도우 지원
 
 ## License / 라이선스
 * [GPL 3.0](https://github.com/DarkTornado/YouTubeDownloader/blob/main/LICENSE).
