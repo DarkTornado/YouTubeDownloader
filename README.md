@@ -24,4 +24,4 @@
   * 멀티 윈도우 지원
 
 ## License / 라이선스
-* [GPL 3.0](https://github.com/DarkTornado/YouTubeDownloader/blob/main/LICENSE).
+* [GPL 3.0](https://github.com/DarkTornado/YouTubeDownloader/blob/main/LICENSE)
