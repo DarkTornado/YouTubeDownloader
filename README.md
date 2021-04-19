@@ -8,7 +8,7 @@
 ## Info. / 정보
 * Extract video file from YouTube.
 * This program is NOT related with Google and YouTube.
-* Developer is NOT responsible for any problems by using this program and source.
+* Developer does NOT take responsible for any problems by using this program and source.
 * YouTube에서 동영상을 추출해줘요
 * 이 앱은 구글과 YouTube와는 관계가 없는 앱이며, 개발자는 이 앱 및 소스를 사용함으로서 생기는 문제에 책임을 지지 않아요.
 
