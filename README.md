@@ -25,3 +25,7 @@
 
 ## License / 라이선스
 * [GPL 3.0](https://github.com/DarkTornado/YouTubeDownloader/blob/main/LICENSE)
+
+## Dev's  Guideline / 개발자 가이드라인
+* Commercial usage is BANNED.
+* 상업적 이용 금지.
