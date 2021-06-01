@@ -95,7 +95,8 @@ public class MainActivity extends Activity {
                                 String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
                                 String name = videoId + "_thumbnail.jpg";
                                 boolean downloaded = copyFromWeb("https://img.youtube.com/vi/" + videoId + "/maxresdefault.jpg", path + name);
-                                if (downloaded) toast("Video's thumbnail is downloaded.\nName: " + name + ".mp4\nPath: " + path);
+                                if (downloaded)
+                                    toast("Video's thumbnail is downloaded.\nName: " + name + ".mp4\nPath: " + path);
                             }
                         }).start();
                     }
@@ -138,7 +139,7 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 try {
-                    final String dataa = SimpleRequester.create("https://youtube.com/get_video_info?video_id=" + videoId)
+                    final String dataa = SimpleRequester.create("https://youtube.com/get_video_info?html5=1&video_id=" + videoId)
                             .execute().body;
                     String[] data0 = dataa.split("&");
                     String data2 = null;
@@ -160,7 +161,7 @@ public class MainActivity extends Activity {
                     }
                     JSONObject data = new JSONObject(data2);
                     String url = data.getJSONObject("streamingData").getJSONArray("formats").getJSONObject(0).getString("url");
-                    final String title = data.getJSONObject("videoDetails").getString("title");
+                    final String title = data.getJSONObject("videoDetails").getString("title").replace("/", "");
                     final String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
                     if (copyFromWeb(url, path + title + ".mp4")) toast("Video is downloaded.\nName: " + title + ".mp4\nPath: " + path);
                     runOnUiThread(new Runnable() {
@@ -202,7 +203,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private AlertDialog showProgress(){
+    private AlertDialog showProgress() {
         AlertDialog dialog = new AlertDialog.Builder(this).create();
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(1);
