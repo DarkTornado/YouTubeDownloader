@@ -23,6 +23,11 @@
   * 동영상 미리보기 이미지 다운로드 지원.
   * 멀티 윈도우 지원
 
+* [Version 2.1](https://raw.githubusercontent.com/DarkTornado/YouTubeDownloader/main/YouTubeDownloader%202.1.apk)
+  * Downloading YouTube video is always failed is fixed.
+    * `https://youtube.com/get_video_info` always returns 404. -> fixed by adding new parameter `html5=1`.
+  * 모든 동영상이 다운로드되지 않는 현상 수정.
+
 ## License / 라이선스
 * [GPL 3.0](https://github.com/DarkTornado/YouTubeDownloader/blob/main/LICENSE)
 
