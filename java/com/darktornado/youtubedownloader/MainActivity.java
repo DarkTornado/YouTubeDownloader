@@ -3,6 +3,7 @@ package com.darktornado.youtubedownloader;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -23,6 +24,7 @@ import android.widget.Toast;
 
 import com.darktornado.library.SimpleRequester;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -95,8 +97,7 @@ public class MainActivity extends Activity {
                                 String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
                                 String name = videoId + "_thumbnail.jpg";
                                 boolean downloaded = copyFromWeb("https://img.youtube.com/vi/" + videoId + "/maxresdefault.jpg", path + name);
-                                if (downloaded)
-                                    toast("Video's thumbnail is downloaded.\nName: " + name + ".mp4\nPath: " + path);
+                                if (downloaded) toast("Video's thumbnail is downloaded.\nName: " + name + ".mp4\nPath: " + path);
                             }
                         }).start();
                     }
@@ -160,19 +161,64 @@ public class MainActivity extends Activity {
                         return;
                     }
                     JSONObject data = new JSONObject(data2);
-                    String url = data.getJSONObject("streamingData").getJSONArray("formats").getJSONObject(0).getString("url");
                     final String title = data.getJSONObject("videoDetails").getString("title").replace("/", "");
-                    final String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
-                    if (copyFromWeb(url, path + title + ".mp4")) toast("Video is downloaded.\nName: " + title + ".mp4\nPath: " + path);
+                    JSONArray data3 = data.getJSONObject("streamingData").getJSONArray("formats");
+                    int size = data3.length();
+                    final String[] sizes = new String[size], urls = new String[size];
+                    for (int n = 0; n < data3.length(); n++) {
+                        JSONObject json = data3.getJSONObject(n);
+                        sizes[n] = json.getString("width") + " × " + json.getString("height");
+                        urls[n] = json.getString("url");
+                    }
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            dialog.dismiss();
+                            selectVideoSize(title, sizes, urls, dialog);
                         }
                     });
                 } catch (Exception e) {
                     toast("Failed to parse video's data.\n" + e.toString());
                 }
+            }
+        }).start();
+    }
+
+    private void selectVideoSize(final String title, final String[] sizes, final String[] urls, final AlertDialog dialog0) {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("Select Video's Resolution");
+        dialog.setItems(sizes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog1, final int which) {
+                download(title + " (" + sizes[which] + ")", urls[which], dialog0);
+                toast(sizes[which] + " is selected.");
+            }
+        });
+        dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialog0.dismiss();
+                toast("Download is canceled.");
+            }
+        });
+        dialog.show();
+    }
+
+    private void download(final String title, final String url, final AlertDialog dialog) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
+                if (copyFromWeb(url, path + title + ".mp4")) {
+                    toast("Video is downloaded.\nName: " + title + ".mp4\nPath: " + path);
+                } else {
+                    toast("Failed to downloaded video.");
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                    }
+                });
             }
         }).start();
     }
