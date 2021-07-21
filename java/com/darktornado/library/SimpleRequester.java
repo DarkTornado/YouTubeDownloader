@@ -2,7 +2,7 @@ package com.darktornado.library;
   
 /*
 Simple Requester
-© 2020 Dark Tornado, All rights reserved.
+© 2020-2021 Dark Tornado, All rights reserved.
 */
 
 import java.io.BufferedReader;
@@ -17,17 +17,17 @@ import java.util.HashMap;
 public class SimpleRequester {
     public static final String METHOD_GET = "GET";
     public static final String METHOD_POST = "POST";
+    private final HashMap<String, String> header = new HashMap<>();
     private String url;
     private StringBuilder params;
-    private HashMap<String, String> header;
     private String method = METHOD_GET;
     private int timeout = 5000;
     private String encode1 = "UTF-8";
     private String encode2 = "UTF-8";
     private String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36";
+    private int follow = -1;
 
     public SimpleRequester() {
-        header = new HashMap<>();
     }
 
     public SimpleRequester(String url) {
@@ -73,6 +73,10 @@ public class SimpleRequester {
         }
     }
 
+    public void setFollowRedirects(boolean follow) {
+        this.follow = follow ? 1 : 0;
+    }
+
     public static SimpleRequester create(String url) {
         return new SimpleRequester(url);
     }
@@ -113,8 +117,14 @@ public class SimpleRequester {
         return this;
     }
 
-    public void timeout(int timeout) {
+    public SimpleRequester timeout(int timeout) {
         this.timeout = timeout;
+        return this;
+    }
+
+    public SimpleRequester followRedirects(boolean follow) {
+        this.follow = follow ? 1 : 0;
+        return this;
     }
 
     public Response execute() throws IOException {
@@ -127,22 +137,26 @@ public class SimpleRequester {
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(method);
         con.setConnectTimeout(timeout);
-        con.setDoInput(true);
-        con.setDoOutput(true);
         con.setUseCaches(false);
+        con.setDoInput(true);
+        if (method.equals(METHOD_POST)) con.setDoOutput(true);
+        if (follow != -1) con.setInstanceFollowRedirects(follow == 1);
         con.setRequestProperty("User-Agent", userAgent);
         con.setRequestProperty("Accept-Charset", encode1);
         for (String key : header.keySet()) {
             con.setRequestProperty(key, header.get(key));
         }
-        if (method.equals(METHOD_POST)) {
+        if (method.equals(METHOD_POST) && params != null) {
             DataOutputStream dos = new DataOutputStream(con.getOutputStream());
             dos.writeBytes(params.toString());
             dos.flush();
             dos.close();
         }
 
-        DataInputStream dis = new DataInputStream(con.getInputStream());
+        int code = con.getResponseCode();
+        DataInputStream dis;
+        if (200 <= code && code < 400) dis = new DataInputStream(con.getInputStream());
+        else dis = new DataInputStream(con.getErrorStream());
         InputStreamReader isr = new InputStreamReader(dis, encode2);
         BufferedReader br = new BufferedReader(isr);
         StringBuilder str = new StringBuilder(br.readLine());
@@ -153,21 +167,26 @@ public class SimpleRequester {
         br.close();
         isr.close();
         dis.close();
-        return new Response(con.getResponseCode(), str.toString());
+        return new Response(code, con.getResponseMessage(), str.toString());
     }
 
     public static class Response {
         public int responseCode;
+        public String msg;
         public String body;
-        public String params;
 
-        public Response(int code, String body) {
+        public Response(int code, String msg, String body) {
             responseCode = code;
+            this.msg = msg;
             this.body = body;
         }
 
         public int getResponseCode() {
             return responseCode;
+        }
+
+        public String getResponseMessage() {
+            return msg;
         }
 
         public String getResponseBody() {
@@ -181,4 +200,3 @@ public class SimpleRequester {
     }
 
 }
-
