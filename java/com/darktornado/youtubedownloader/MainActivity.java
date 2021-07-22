@@ -14,7 +14,6 @@ import android.os.Environment;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -34,6 +33,7 @@ import java.io.FileOutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 
 public class MainActivity extends Activity {
 
@@ -67,40 +67,32 @@ public class MainActivity extends Activity {
             Button video = new Button(this);
             video.setText("Download Video");
             video.setTransformationMethod(null);
-            video.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    String input = txt2.getText().toString();
-                    if (input.equals("")) {
-                        toast("Please input video's url.");
-                    } else {
-                        final AlertDialog dialog = showProgress();
-                        download(parseVideoId(input), dialog);
-                    }
+            video.setOnClickListener(view -> {
+                String input = txt2.getText().toString();
+                if (input.equals("")) {
+                    toast("Please input video's url.");
+                } else {
+                    final AlertDialog dialog = showProgress();
+                    download(parseVideoId(input), dialog);
                 }
             });
             layout.addView(video);
             Button image = new Button(this);
             image.setText("Download Thumbnail");
             image.setTransformationMethod(null);
-            image.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    String input = txt2.getText().toString();
-                    if (input.equals("")) {
-                        toast("Please input video's url.");
-                    } else {
-                        final String videoId = parseVideoId(input);
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
-                                String name = videoId + "_thumbnail.jpg";
-                                boolean downloaded = copyFromWeb("https://img.youtube.com/vi/" + videoId + "/maxresdefault.jpg", path + name);
-                                if (downloaded) toast("Video's thumbnail is downloaded.\nName: " + name + ".mp4\nPath: " + path);
-                            }
-                        }).start();
-                    }
+            image.setOnClickListener(view -> {
+                String input = txt2.getText().toString();
+                if (input.equals("")) {
+                    toast("Please input video's url.");
+                } else {
+                    final String videoId = parseVideoId(input);
+                    new Thread(() -> {
+                        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
+                        String name = videoId + "_thumbnail.jpg";
+                        boolean downloaded = copyFromWeb("https://img.youtube.com/vi/" + videoId + "/maxresdefault.jpg", path + name);
+                        if (downloaded)
+                            toast("Video's thumbnail is downloaded.\nName: " + name + ".mp4\nPath: " + path);
+                    }).start();
                 }
             });
             layout.addView(image);
@@ -136,49 +128,41 @@ public class MainActivity extends Activity {
     }
 
     private void download(final String videoId, final AlertDialog dialog) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final String dataa = SimpleRequester.create("https://youtube.com/get_video_info?html5=1&video_id=" + videoId)
-                            .execute().body;
-                    String[] data0 = dataa.split("&");
-                    String data2 = null;
-                    for (final String s : data0) {
-                        if (s.startsWith("player_response=")) {
-                            data2 = URLDecoder.decode(s.substring(s.indexOf("=") + 1), "UTF-8");
-                            break;
-                        }
+        new Thread(() -> {
+            try {
+//                final String dataa = SimpleRequester.create("https://youtube.com/get_video_info?html5=1&video_id=" + videoId).execute().body;
+                String url = "https://www.youtube.com/get_video_info?html5=1&video_id=" + videoId +
+                        "&eurl=" + URLEncoder.encode("https://youtube.googleapis.com/v/" + videoId, "UTF-8") +
+                        "&c=TVHTML5&cver=6.20180913";
+                String dataa = SimpleRequester.create(url).execute().body;
+                String[] data0 = dataa.split("&");
+                String data2 = null;
+                for (final String s : data0) {
+                    if (s.startsWith("player_response=")) {
+                        data2 = URLDecoder.decode(s.substring(s.indexOf("=") + 1), "UTF-8");
+                        break;
                     }
-                    if (data2 == null) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                dialog.dismiss();
-                                toast("Cannot load video's info.");
-                            }
-                        });
-                        return;
-                    }
-                    JSONObject data = new JSONObject(data2);
-                    final String title = data.getJSONObject("videoDetails").getString("title").replace("/", "");
-                    JSONArray data3 = data.getJSONObject("streamingData").getJSONArray("formats");
-                    int size = data3.length();
-                    final String[] sizes = new String[size], urls = new String[size];
-                    for (int n = 0; n < data3.length(); n++) {
-                        JSONObject json = data3.getJSONObject(n);
-                        sizes[n] = json.getString("width") + " × " + json.getString("height");
-                        urls[n] = json.getString("url");
-                    }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            selectVideoSize(title, sizes, urls, dialog);
-                        }
-                    });
-                } catch (Exception e) {
-                    toast("Failed to parse video's data.\n" + e.toString());
                 }
+                if (data2 == null) {
+                    runOnUiThread(() -> {
+                        dialog.dismiss();
+                        toast("Cannot load video's info.");
+                    });
+                    return;
+                }
+                JSONObject data = new JSONObject(data2);
+                final String title = data.getJSONObject("videoDetails").getString("title").replace("/", "");
+                JSONArray data3 = data.getJSONObject("streamingData").getJSONArray("formats");
+                int size = data3.length();
+                final String[] sizes = new String[size], urls = new String[size];
+                for (int n = 0; n < data3.length(); n++) {
+                    JSONObject json = data3.getJSONObject(n);
+                    sizes[n] = json.getString("width") + " × " + json.getString("height");
+                    urls[n] = json.getString("url");
+                }
+                runOnUiThread(() -> selectVideoSize(title, sizes, urls, dialog));
+            } catch (Exception e) {
+                toast("Failed to parse video's data.\n" + e.toString());
             }
         }).start();
     }
@@ -204,22 +188,19 @@ public class MainActivity extends Activity {
     }
 
     private void download(final String title, final String url, final AlertDialog dialog) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
-                if (copyFromWeb(url, path + title + ".mp4")) {
-                    toast("Video is downloaded.\nName: " + title + ".mp4\nPath: " + path);
-                } else {
-                    toast("Failed to downloaded video.");
-                }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        dialog.dismiss();
-                    }
-                });
+        new Thread(() -> {
+            final String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/";
+            if (copyFromWeb(url, path + title + ".mp4")) {
+                toast("Video is downloaded.\nName: " + title + ".mp4\nPath: " + path);
+            } else {
+                toast("Failed to downloaded video.");
             }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    dialog.dismiss();
+                }
+            });
         }).start();
     }
 
@@ -229,10 +210,10 @@ public class MainActivity extends Activity {
             if (con != null) {
                 con.setConnectTimeout(5000);
                 con.setUseCaches(false);
-                BufferedInputStream bis = new BufferedInputStream(con.getInputStream());
+                BufferedInputStream bis = new BufferedInputStream(con.getInputStream(), 1024);
                 File file = new File(path);
                 FileOutputStream fos = new FileOutputStream(file);
-                BufferedOutputStream bos = new BufferedOutputStream(fos);
+                BufferedOutputStream bos = new BufferedOutputStream(fos, 1024);
                 int buf;
                 while ((buf = bis.read()) != -1) {
                     bos.write(buf);
@@ -280,12 +261,7 @@ public class MainActivity extends Activity {
     }
 
     private void toast(final String msg) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
-            }
-        });
+        runOnUiThread(() -> Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show());
     }
 
     public int dip2px(int dips) {
