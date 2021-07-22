@@ -31,7 +31,6 @@ public class LicenseActivity extends Activity {
         loadLicenseInfo(layout, "Simple Requester", "license_bsd", "BSD 3-Clause", "Dark Tornado", false);
         loadLicenseInfo(layout, "Material Design", "license_apache", "Apache License 2.0", "Google", false);
 
-
         int pad = dip2px(16);
         layout.setPadding(pad, pad, pad, pad);
         ScrollView scroll = new ScrollView(this);
@@ -59,12 +58,7 @@ public class LicenseActivity extends Activity {
         TextView txt = new TextView(this);
         if (value.length() > 1500) {
             txt.setText(Html.fromHtml(value.substring(0, 1500).replace("\n", "<br>") + "...<font color='#757575'><b>[Show All]</b></font>"));
-            txt.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    showDialog(license, value);
-                }
-            });
+            txt.setOnClickListener(v -> showDialog(license, value));
         } else {
             txt.setText(value);
         }
@@ -89,7 +83,7 @@ public class LicenseActivity extends Activity {
             return str.toString();
         } catch (Exception e) {
             toast(e.toString());
-            return "라이선스 정보 불러오기 실패";
+            return "Failed to load license.";
         }
     }
 
@@ -98,7 +92,7 @@ public class LicenseActivity extends Activity {
             AlertDialog.Builder dialog = new AlertDialog.Builder(this);
             dialog.setTitle(title);
             dialog.setMessage(msg);
-            dialog.setNegativeButton("닫기", null);
+            dialog.setNegativeButton("Close", null);
             dialog.show();
         } catch (Exception e) {
             toast(e.toString());
